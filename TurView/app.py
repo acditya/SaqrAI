@@ -98,7 +98,7 @@ def register():
         conn.close()
 
     elif request.method == "GET":
-        return render_template("register.html", designer_job_desc=jd.designer_job_desc, software_job_desc=jd.software_job_desc, consultant_job_desc=jd.consultant_job_desc, stratigist_job_desc=jd.stratigist_job_desc)
+        return render_template("register.html", designer_job_desc=jd.designer_job_desc(), software_job_desc=jd.software_job_desc(), consultant_job_desc=jd.consultant_job_desc(), stratigist_job_desc=jd.stratigist_job_desc())
     
     return redirect("/turview")
 
@@ -133,7 +133,9 @@ def handle_transcription():
         while not audio_queue.empty:
             file = audio_queue.get()
             print(f"Transcribing {file}")
-            turview_bot.answers_from_user.append = st.transcribe(file)
+            text = st.transcribe(file)
+            print(f"Transcription: {text}")
+            turview_bot.answers_from_user.append = text
 
 
 @app.route("/handle_conversation")
@@ -188,12 +190,7 @@ def handle_conversation():
     # Generate Report
     turview_bot.analyze_answers()
 
-    report = tr.TurViewReport()
-    questions = report.Questions(turview_bot.questions)
-    user_answers = report.Answers(turview_bot.answers_from_user)
-    llm_answers = report.Answers(turview_bot.answers_from_llm)
-
-    report = tr.TurViewReport(name=turview_bot.name, job_desc=turview_bot.job_desc_text, questions=questions, user_answers=user_answers, llm_answers=llm_answers, results = turview_bot.results)
+    report = tr.TurViewReport(name=turview_bot.name, job_desc=turview_bot.job_desc, questions=turview_bot.questions, client_answers=turview_bot.answers_from_user, ideal_answers=turview_bot.answers_from_llm, results = turview_bot.results)
 
     report_path = f"{user_dir_path}/turview_report{user_id}.docx"
     report.write_document(output_path=report_path)
