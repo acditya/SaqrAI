@@ -43,11 +43,6 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/history")
-def history():
-    return render_template("history.html", interviews=interviews)
-
-
 @app.route("/register", methods=['GET', 'POST'])
 def register():
     global user_id
@@ -75,10 +70,21 @@ def register():
         file.save(filepath)
 
         # Get the job description
-        if request.form.get("job_desc"):
-            job_desc = request.form.get("job_desc")
+        job_desc = ""
+
+        if request.form.get("job_desc") == "1":
+            job_desc = jd.designer_job_desc()
         
-        elif request.form.get("job_desc") == 5 and request.form.get("job_desc_input"):
+        elif request.form.get("job_desc") == "2":
+            job_desc = jd.software_job_desc()
+
+        elif request.form.get("job_desc") == "3":
+            job_desc = jd.stratigist_job_desc()
+
+        elif request.form.get("job_desc") == "4":
+            job_desc = jd.consultant_job_desc()
+        
+        elif request.form.get("job_desc") == "5" and request.form.get("job_desc_input"):
             job_desc = request.form.get("job_desc_input")
             
         else:
