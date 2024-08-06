@@ -23,7 +23,10 @@ class FalconChatbot:
         self.answers_from_user = []
         self.answers_from_llm = []
         self.results = []
-        self.greetings = self.get_greetings() if  TurView else None
+        self.greetings = "Hello! I am Ter View Bot and I will be interviewing you today based on your uploaded resume and chosen job description, good luck!"
+
+        if TurView:
+            self.answers_from_llm = [self.get_llm_answer(question) for question in self.questions]
 
         # Fillers in Between Each Question --> 100 Fillers
         self.fillers = [ 
@@ -127,9 +130,7 @@ class FalconChatbot:
             "Thanks for your response. Next question.",
             "Understood. Moving on."
         ]
-        
-        # Initially False, becomes true once all questions and ideal answers are generated
-        self.initialized = False
+
 
     def get_response(self, prompt, temperature=0):
         self.messages.append({"role": "user", "content": prompt}) 
@@ -149,37 +150,38 @@ class FalconChatbot:
         
         return response
     
-    def get_greetings(self):
-        prompt = f"""
-            This is the CV: {self.cv}
-            This is the Job Description: {self.job_desc}
 
-            Give me a string greeting message for the candidate, introduce yourself as the Ter View Bot and say you will interview them about the position in the job description."
-        """
+    # Causes Errors
+    def get_greetings(self):
+        prompt = "Give me a string greeting message where you introduce yourself as the Ter View Bot and say you will interview them about the position in the job description."
 
         return self.get_response(prompt)
+
 
     def get_questions(self):
         prompt = f"""
             The CV: {self.cv}
             Job Description: {self.job_desc}
             
-            Now return 5 interview questions. 3 questions should be behavioral, and 2 questions should be technical.
+            Now return 5 interview questions based on the job description and CV. 3 questions should be behavioral, and 2 questions should be technical.
             Return them in a list of strings, you must follow this format: ["question1", "question2", "question3", "question4", "question5"] such that I can parse them in Python.
             """
         
         return ast.literal_eval(self.get_response(prompt))
 
-    def get_llm_answers(self, questions):
+
+    def get_llm_answer(self, question):
         prompt = f"""
-            This is the list of questions: {questions}
-            You must generate the ideal response to each of these questions, in order.
-            Expect each response to take at least one minute to be spoken.
-            Return them as a list of strings (["response1", "response2", ...]) such that I can parse it in Python
+            This is a question: {question}
+
+            You must generate the ideal response to it.
+            
+            Return it as a string such that I can parse it in Python
             """
         
         return self.get_response(prompt)
     
+
     def analyze_answers(self):
         for question, ideal_answer, answer in zip(self.questions, self.answers_from_llm, self.answers_from_user):
             prompt = f"""
@@ -194,20 +196,25 @@ class FalconChatbot:
             """
             self.results.append(self.get_response(prompt))
 
+
     def insert_user_answer(self, answer_as_text):
         self.answers_from_user.append(answer_as_text)
+
 
     def get_filler(self):
         return random.choice(self.fillers)
 
+
     def get_messages(self):
         return self.messages
+
 
     def get_report(self):
         turview_report = tr.TurViewReport(name=self.name, job_desc=self.job_desc, questions=self.questions, ideal_answers=self.answers_from_llm, client_answers=self.answers_from_user, results=self.results)
 
         return turview_report
     
+
 if __name__ == "__main__":
     chatbot = FalconChatbot(cv_text="""SULTAN WALEED ALHOSANI
                                     alhosani909@gmail.com | +971 56 757 7346 | Abu Dhabi, UAE
