@@ -6,7 +6,31 @@ from docx2pdf import convert
 from typing import Optional
 import os
 from PyPDF2 import PdfReader
-from handle_falcon import FalconChatbot
+from ai71 import AI71
+import time
+
+AI71_API_KEY = "api71-api-cbdf95af-ec38-4f97-8d7e-cb2ec3823f46"
+client = AI71(AI71_API_KEY)
+
+global messages
+messages = [
+        {"role": "system", "content": "You are a CV formatting assistant that will intake a CV, upgrade its English grammar and spelling, and return parts of it back as Python 3 datatypes."}
+]
+
+def talk_to_model(input_text: str) -> str:
+    global messages
+
+    messages.append({"role": "user", "content": input_text})
+
+    response = client.chat.completions.create(
+        model="tiiuae/falcon-40b-instruct",
+        messages=messages,
+    ).choices[0].message.content
+
+    messages.append({"role": "assistant", "content": response})
+
+    return response
+
 
 class Header:
     def __init__(self, email: str,  location: str, name: str, phone: str, github: Optional[str] = None, linkedin: Optional[str] = None):
@@ -74,23 +98,19 @@ class EducationExperience:
                 self._gpa = ""
 
 class Skills: 
-    def __init__(self, skillset: list, training: Optional[list]): 
+    def __init__(self, skillset: list[str]): 
         self.skillset = skillset
-        self.training = training
 
     def __str__(self):
         return f"Skillset: {self.skillset}, Training: {self.training}"
 
 # Combines Everything Together To Create A Resume
 class Resume:
-    def __init__(self, education: list[EducationExperience], header: Header, skills: list[Skills], work: list[WorkAndLeadershipExperience], lship: Optional[list[WorkAndLeadershipExperience]], projects: Optional[list[Project]], keywords: Optional[list[str]]):
+    def __init__(self, education: list[EducationExperience], header: Header, work: list[WorkAndLeadershipExperience], skills=None):
         self.education = education
         self.header = header
-        self.lship = lship
-        self.projects = projects
         self.skills = skills
         self.work = work
-        self.keywords = keywords
 
     def __str__(self):
         education_str = ', '.join([education.__str__() for education in self.education]) if self.education else ''
@@ -101,18 +121,18 @@ class Resume:
         
         return f"Header: {self.header.__str__()}, Education: {education_str}, Work: {work_str}, Projects: {projects_str}, Leadership: {leadership_str}, Skills: {skills_str}"
     
-    def write_document(self, template_path: str = r"TurView/Docxtpl Templates/TurView Docxtpl Compatible CV Template.docx", output_path: str = r"TurView/Docxtpl Templates/Formatted CVs") -> None:
+    def write_document(self, template_path: str = r"TurView/Docxtpl Templates/TurView Docxtpl Compatible CV Template.docx", output_path: str = r"TurView/Docxtpl Templates") -> None:
         # Load the template
         doc = DocxTemplate(template_path)
+
+        output_path = os.path.join(output_path, f"{self.header.name} CV.docx")
 
         # Create context from the provided data
         context = {
             "header": self.header,
-            "education_list": self.education,
-            "work_list": self.work,
-            "lship_list": self.lship if self.lship else [],  # The same as 'training'.
-            "project_list": self.projects if self.projects else [],
-            "skills": {"skillset": self.skills.skillset, "training": self.skills.training if self.skills.training else []},  # This will assign 'training' to its attribute if training exits.
+            "education": self.education,
+            "work": self.work
+            # "skills": self.skills
         }
 
         # Render and Save the Document
@@ -121,39 +141,25 @@ class Resume:
         convert(output_path, output_path.replace(".docx", ".pdf"))
 
 def cv_formatter(cv_txt: str) -> Resume:
-    # 1. Initialize CV Writer Bot
-    cv_writer = FalconChatbot(cv_text = cv_txt, job_desc_text = None, TurView = False)
-
-    # 2. Initialize AI's Personality, Feed it the Entire CV as Raw Text and Let it Understand the Entire CV
-    unused = cv_writer.get_response(f"""Your job is to rewrite and transform a CV that I will now give you.
-
-    Maintain sections like Education, Work Experience, Leadership Experience, Projects and Skills and Additional Training, carefully avoiding the addition of unrequested sections. Your goal is to achieve zero error in formatting and content adaptation, showcasing the user's achievements and skills effectively whilst correcting and upgrading grammar, english, and spelling mistakes. Request more information if details are insufficient and ensure the CV is professional. For each section, return a max of 5 bullet points, be creative if you must.
-
-    You must correct any grammatical, spelling, spacing and capitalization mistakes in small details. No additional comments, only return text containing an upgraded CV.
+    # 1. Initialize CV Writer
+    talk_to_model(f"This is the CV to Upgrade: {cv_txt}")
     
-    Do not add any additional commentary such as "User: " or "Assistant: " to the text. Only return the what is asked of you.                       
-
-    This is the CV to Upgrade: {cv_txt}""", 
-    )
-
     # 3. Format it Section by Section
     queries = {
-        # "header": "Return a list of 6 strings that include this person's Name, Email, Phone, Location, LinkedIn, and Github as a list of strings [Name, Email, Phone, Location, LinkedIn, Github]. You will typically find this at the top of the unformatted CV. If any of these fields are empty, return an empty string for that field. Be smart, the CV may not be labelled very well so find the section that matches this. If this entire section is empty, just return one big empty list: []. Make sure to close all parentheses properly. Do not return anything except the list. no extra words at all",
-        "education": "From the CV, extract a list I will now describe such that I can parse it in Python (one sublist in the MASTER list of lists for each education) [['University Name 1', 'Location', 'Dates of Enrollment', 'Major', 'GPA', 'Coursework', 'Details']]. Stick to this data type, do not return anything else. Be efficient in filling out these fields.",
-        "work": "From the CV, extract a list I will now describe such that I can parse it in Python (one sublist in the MASTER list of lists for each work experience): [['Company 1', 'Position 1', 'Location', 'Dates of Work', 'Details']] Stick to this data type, do not return anything else. Be efficient in filling out these fields.",
-        "projects": "From the CV, extract a list I will now describe such that I can parse it in Python(one sublist in the MASTER list of lists for each project): [['Project Title 1', 'Position 1', 'Location', 'Dates of Work', 'Details']] Stick to this data type, do not return anything else. Be efficient in filling out these fields.",
-        "lship": "From the CV, extract a list I will now describe such that I can parse it in Python(one sublist in the MASTER list of lists for each leadership experience): [['Company 1', 'Position 1', 'Location', 'Dates of Work', 'Details']] Stick to this data type, do not return anything else. Be efficient in filling out these fields.",
-        "skills": "From the CV, extract a list I will now describe such that I can parse it in Python. Extract the key skills specific to hard and research skills, do also extract training details, workshops and certifications from the CV's Work and Educational experiences and organize them into a list with two sublists. Firstly, key, hard and research skills are job-specific and academia-specific (respectively) abilities acquired through education and training, soft skills are general personality traits. You must only extract and return key skills specific to hard and research skills, NO soft skills. The first sublist should only contain the extracted hard and research skills, each as a separate string element, formatted as simple bullet points without additional nesting. The second sublist should contain training details in a similar format. Training details should include any and all workshops, certificiations, and training details you can extract from the CV, be creative as training details are essential and you MUST return them. Both sublists are part of a single, main list. If there is no information available in the CV for either skills or training, the corresponding sublist should be empty. The main list should never be nested more than two levels deep. If there are no skills and no training details available, return an empty list: []. Make sure to close all parentheses properly."
+        "header": "Return a list of 6 strings that include this person's Name, Email, Phone, Location, LinkedIn, and Github as a list of strings ['Name', 'Email', 'Phone', 'Location', 'LinkedIn', 'Github']. You will typically find this at the top of the unformatted CV. If any of these fields are empty, return an empty string for that field. Be smart, the CV may not be labelled very well so find the section that matches this. If this entire section is empty, just return one big empty list: []. Make sure to close all parentheses properly. Do not return anything except the list. no extra words at all",
+        "education": "From the CV, extract only one education experience as a list I will now describe such that I can parse it in Python ['University Name 1', 'Location', 'Dates of Enrollment', 'Major', 'GPA', 'Coursework', 'Brief sentence explaining some details']. Stick to this data type, do not return anything else. Be efficient in filling out these fields.",
+        "work": "From the CV, extract only one work experience as a list I will now describe such that I can parse it in Python ['Company', 'Position 1', 'Location', 'Dates of Work', 'very short sentence explaining this work experience'] Stick to this data type, do not return anything else. Be efficient in filling out these fields."
+        # "skills": "From the CV, extract one word/phrase skills as a list of string I will now describe such that I can parse it in Python. ['skill1', 'skill2', ...]. Stick to this data type, do not return anything else. Be efficient in filling out these fields."
     }
 
     for key in queries:
         # Query the API for the Formatted Section
         print(f"Current key is {key}")
-        response = cv_writer.get_response(queries[key])
-        if "User: " in response:
-            formatted_query_data = response.split("User: ", 1)[1]
+        response = talk_to_model(queries[key])
+        if "User:" in response:
+            formatted_query_data = response.replace("User:", "").strip()
         else:
-            formatted_query_data = response
+            formatted_query_data = response.strip()
         
         # Ensure the extracted part is valid Python syntax
         try:
@@ -164,7 +170,6 @@ def cv_formatter(cv_txt: str) -> Resume:
             queries[key] = None  # Handle the error or set a default value
 
         print(f"{key}: {formatted_query_data}")
-
 
     # 4. Create Each Individual Section as an Object
     print("Formulating Header Section") 
@@ -180,80 +185,40 @@ def cv_formatter(cv_txt: str) -> Resume:
         
     print("Formulating Education Section")
     if queries["education"]:
-        education = []
-        for educ in queries["education"]:
-            education.append(EducationExperience(university = educ[0],
-                                        location = educ[1],
-                                        date = educ[2],
-                                        major = educ[3],
-                                        GPA = educ[4],
-                                        coursework = educ[5],
-                                        details = educ[6]))
+        # education = []
+        # for educ in queries["education"]:
+        education = EducationExperience(university = queries["education"][0],
+                                    location = queries["education"][1],
+                                    date = queries["education"][2],
+                                    major = queries["education"][3],
+                                    GPA = queries["education"][4],
+                                    coursework = queries["education"][5],
+                                    details = queries["education"][6])
     else:
         education = None
         
     print("Formulating Work Section")
     if queries["work"]:
-        work = []
-        for work_exp in queries["work"]:
-            work.append(WorkAndLeadershipExperience(company = work_exp[0],
-                                            position = work_exp[1],
-                                            date = work_exp[2],
-                                            location = work_exp[3],
-                                            details = work_exp[4]))
+        # work = []
+        # for work_exp in queries["work"]:
+        work = WorkAndLeadershipExperience(company = queries["work"][0],
+                                        position = queries["work"][1],
+                                        date = queries["work"][2],
+                                        location = queries["work"][3],
+                                        details = queries["work"][4])
             
     else:
-        work = None
+        work = None    
         
-    print("Formulating Projects Section")
-    if queries["projects"]:
-        projects = []
-        for project in queries["projects"]:
-            projects.append(Project(title = project[0],
-                                position = project[1],
-                                date = project[2],
-                                location = project[3],
-                                details = project[4]))
-    else:
-        projects = None
-        
-    print("Formulating Leadership Section")
-    if queries["lship"]:
-        lship = []
-        for leadership in queries["lship"]:
-            lship.append(WorkAndLeadershipExperience(company = leadership[0],
-                                            position = leadership[1],
-                                            date = leadership[2],
-                                            location = leadership[3],
-                                            details = leadership[4]))
-            
-        for work_entry in work: # If lship and work have any "copy/paste" instances, remove them from lship (prioritize work experience over leadership experience)
-            for lship_entry in lship:
-                if lship_entry == work_entry:
-                    lship.remove(lship_entry)
-            
-        if work == None: # If there are 0 work experiences, leadership experiences become work experiences (as they are technically the same thing)
-            work = lship
-            lship = None
-    else:
-        lship = None
-        
-    print("Formulating Skills Section")
-    if queries["skills"]:
-        skills = Skills(skillset = queries["skills"][0],
-                        training = queries["skills"][1])
-    else:
-        skills = None
-
-    print("Formulating Keywords Section")
-    if queries["keywords"]:
-        keywords = queries["keywords"]
-    else:
-        keywords = None
+    # print("Formulating Skills Section")
+    # if queries["skills"]:
+    #     skills = Skills(skillset = queries["skills"])
+    # else:
+    #     skills = None
 
     print("Returning Resume Object to Function Caller")
     # Arrange all Objects into a Single Formatted Resume Object and reutrn to Caller
-    return Resume(header = header, work = work, education = education, skills = skills, lship = lship, projects = projects, keywords = keywords)
+    return Resume(header = header, work = work, education = education)
 
 # Extracts Text from Unformatted .DOCX, .PDF, and .RTF Files.
 def extract_text(file_path) -> str:
@@ -283,5 +248,9 @@ def extract_text(file_path) -> str:
     raise FileNotFoundError(f"Couldn't Find the File. {file_path}")
 
 if __name__ == "__main__":
-    resume = cv_formatter(extract_text(r"TurView/Docxtpl Templates/Formatted CVs/Ahmed Almaeeni CV - Civil & Transportation Engineer --.pdf"))
+    resume = cv_formatter(extract_text(r"TurView\Docxtpl Templates\Formatted CVs\Formatted_h-1995-alameri-gmail-com.pdf"))
     resume.write_document()
+
+# print(talk_to_model(f"This is my CV: {extract_text(r'TurView/Docxtpl Templates/Formatted CVs/Ahmed Almaeeni CV - Civil & Transportation Engineer --.pdf')}")) 
+
+# print(talk_to_model("From the CV, extract a list I will now describe such that I can parse it in Python (one sublist in the MASTER list of lists for each education) [['University Name 1', 'Location', 'Dates of Enrollment', 'Major', 'GPA', 'Coursework', 'Details']]. Stick to this data type, do not return anything else. Be efficient in filling out these fields."))
