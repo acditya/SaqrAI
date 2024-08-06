@@ -3,18 +3,27 @@ import ast
 import random
 import turview_report as tr
 
-AI71_API_KEY = "api71-api-cbdf95af-ec38-4f97-8d7e-cb2ec3823f46"
+AI71_BASE_URL = "https://api.ai71.ai/v1/"
+# AI71_API_KEY = "api71-api-cbdf95af-ec38-4f97-8d7e-cb2ec3823f46" # Adi 1
+AI71_API_KEY = "api71-api-52cc69d3-4619-425f-b618-cc53d3e59f37" # Adi 2
 
 class FalconChatbot:
     def __init__(self, cv_text, job_desc_text, name=None, TurView: bool = True):
         print(f"Initializing FalconChatbot with TurView={TurView}")
 
-        self.client = AI71(AI71_API_KEY)
+        self.client = AI71(api_key=AI71_API_KEY)
         self.name = name
-        self.messages = [{"role": "system", "content": """You are an interview chatbot, called TurViewBot. 
+        self.question_messages = [{"role": "system", "content": """You are an interview chatbot, called TurViewBot. 
                           You will be passed a CV and a job description, and you will generate 5 interview questions based on them.
                           3 questions should be behavioral, and 2 questions should be technical.
-                          At the end, you will be analyzing the answers to the questions and providing a report."""}] if TurView else []
+                          """}] if TurView else []
+        self.answer_messages = [{"role": "system", "content": """You are an interview chatbot, called TurViewBot. 
+                          You will be passed 5 questions and you will generate the ideal answers to them.
+                          """}] if TurView else []
+        self.report_messages = [{"role": "system", "content": """You are an interview chatbot, called TurViewBot. 
+                          You will be passed 5 questions, 5 ideal answers, and 5 candidate answers.
+                          You will compare the candidate's answers to the ideal answers and provide a score and comment for each.
+                          """}] if TurView else []
         self.model = "tiiuae/falcon-180B-chat" # tiiuae/falcon-40b-instruct, tiiuae/falcon-40b, tiiuae/falcon-7b-instruct, tiiuae/falcon-7b
         self.cv = cv_text
         self.job_desc = job_desc_text
@@ -132,22 +141,45 @@ class FalconChatbot:
         ]
 
 
-    def get_response(self, prompt, temperature=0):
-        self.messages.append({"role": "user", "content": prompt}) 
-          
-        response = ""
-        for chunk in self.client.chat.completions.create(
-            messages=self.messages,
-            model=self.model,
-            stream=self.streaming,
-            temperature=temperature
-        ):
-            delta_content = chunk.choices[0].delta.content
-            if delta_content:
-                print(delta_content, sep="", end="", flush=True)
-                response += delta_content
-        self.messages.append({"role": "assistant", "content": response})
-        
+    def get_question_response(self, prompt):
+        self.question_messages.append({"role": "user", "content": prompt}) 
+
+        response = self.client.chat.completions.create(
+            model="tiiuae/falcon-180b-chat",
+            messages=self.question_messages,
+        ).choices[0].message.content
+
+        # print(response)
+        self.question_messages.append({"role": "assistant", "content": response})
+
+        return response
+
+
+    def get_answer_response(self, prompt):
+        self.answer_messages.append({"role": "user", "content": prompt}) 
+
+        response = self.client.chat.completions.create(
+            model="tiiuae/falcon-180b-chat",
+            messages=self.answer_messages,
+        ).choices[0].message.content
+
+        # print(response)
+        self.answer_messages.append({"role": "assistant", "content": response})
+
+        return response
+
+
+    def get_report_response(self, prompt):
+        self.report_messages.append({"role": "user", "content": prompt}) 
+
+        response = self.client.chat.completions.create(
+            model="tiiuae/falcon-180b-chat",
+            messages=self.report_messages,
+        ).choices[0].message.content
+
+        # print(response)
+        # self.report_messages.append({"role": "assistant", "content": response})
+
         return response
     
 
@@ -159,42 +191,63 @@ class FalconChatbot:
 
 
     def get_questions(self):
-        prompt = f"""
-            The CV: {self.cv}
-            Job Description: {self.job_desc}
+        # prompt = f"""
+        #     The CV: {self.cv}
+        #     Job Description: {self.job_desc}
             
-            Now return 5 interview questions based on the job description and CV. 3 questions should be behavioral, and 2 questions should be technical.
-            Return them in a list of strings, you must follow this format: ["question1", "question2", "question3", "question4", "question5"] such that I can parse them in Python.
+        #     Now return 5 interview questions based on the job description and CV. 3 questions should be behavioral, and 2 questions should be technical.
+        #     Return them in a list of strings, you must follow this format: ["question1", "question2", "question3", "question4", "question5"] such that I can parse them in Python.
+        #     """
+
+        prompt = f"""
+            CV: {self.cv}
+            Job Description: {self.job_desc}
+
+            Generate 5 interview questions: 3 behavioral and 2 technical, based on this CV and Job description in this format so i can parse it in Python: ["question1", "question2", "question3", "question4", "question5"].
             """
         
-        return ast.literal_eval(self.get_response(prompt))
+        return ast.literal_eval(self.get_question_response(prompt))
 
 
     def get_llm_answer(self, question):
-        prompt = f"""
-            This is a question: {question}
+        # prompt = f"""
+        #     This is a question: {question}
 
-            You must generate the ideal response to it.
+        #     You must generate the ideal response to it.
             
-            Return it as a string such that I can parse it in Python
+        #     Return it as a string such that I can parse it in Python
+        #     """
+        
+        prompt = f"""
+            Question: {question}
+            Generate the ideal answer to this question in this format so i can parse it in Python: "ideal answer".
             """
         
-        return self.get_response(prompt)
+        return self.get_answer_response(prompt)
     
 
     def analyze_answers(self):
         for question, ideal_answer, answer in zip(self.questions, self.answers_from_llm, self.answers_from_user):
+            # prompt = f"""
+            # This is the question: {question}.
+            # This its ideal answer: {ideal_answer}.
+            # This is the answer provided by the candidate: {answer}. 
+
+            # Compare the candidate's answer to the question and ideal answer in terms of relevance and quality. 
+            # Then, you will return two things as a tuple: 1. A score from 1 to 10 as in integer. 2. A comment on the candidate's answer, Include the PROS and CONS of their answer as a string.
+
+            # Return them as a tuple (score, "comment") such that I can parse it in Python.
+            # """
+
             prompt = f"""
-            This is the question: {question}.
-            This its ideal answer: {ideal_answer}.
-            This is the answer provided by the candidate: {answer}. 
+                Question: {question}
+                Ideal Answer: {ideal_answer}
+                Candidate Answer: {answer}
 
-            Compare the candidate's answer to the question and ideal answer in terms of relevance and quality. 
-            Then, you will return two things as a tuple: 1. A score from 1 to 10 as in integer. 2. A comment on the candidate's answer, Include the PROS and CONS of their answer as a string.
-
-            Return them as a tuple (score, "comment") such that I can parse it in Python.
-            """
-            self.results.append(self.get_response(prompt))
+                Return a Score (1-10) and comment (pros and cons) for the candidate answer based on question and ideal answer.
+                Format for Python: (score, "comment").
+                """
+            self.results.append(self.get_report_response(prompt))
 
 
     def insert_user_answer(self, answer_as_text):
@@ -300,10 +353,16 @@ if __name__ == "__main__":
                     Opportunities for career advancement and professional development.
                     Collaborative and dynamic work environment.""")
 
-    # chatbot.get_questions()
+    chatbot.questions = chatbot.get_questions()
 
-    # print(chatbot.questions)
+    print(chatbot.questions)
 
-    # chatbot.get_greetings()
+    for question in chatbot.questions:
+        answer = chatbot.get_llm_answer(question=question)
+        print(f"Question: {question}\nAnswer: {answer}")
+        chatbot.answers_from_llm.append(answer)
+    
+    chatbot.answers_from_user = chatbot.answers_from_llm
 
-    # print(chatbot.greetings)
+    chatbot.analyze_answers()
+    print(chatbot.results)
