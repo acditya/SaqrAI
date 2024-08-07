@@ -172,14 +172,16 @@ def initialize_turview_bot(name, cv, job_description):
 
 def handle_transcription():
     print("Transcription Started")
-    
-    while transcribe:
-        while not audio_queue.empty:
+    audio_count = 0
+
+    while audio_count < 5:
+        while not audio_queue.empty():
             file = audio_queue.get()
             print(f"Transcribing {file}")
             text = st.transcribe(file)
             print(f"Transcription: {text}")
-            turview_bot.answers_from_user.append = text
+            turview_bot.answers_from_user.append(text)
+            audio_count += 1
 
 
 @app.route("/handle_conversation")
@@ -218,6 +220,7 @@ def handle_conversation():
         print(f"Answer Received for Question #{question + 1}, Proceeding...")
         
         time.sleep(random.uniform(1.5, 3.5)) # Natural Pause
+        audio_queue.put(f"{user_dir_path}/question_{question + 1}.wav")
 
         if question != 4:
             filler = turview_bot.get_filler()
@@ -236,8 +239,7 @@ def handle_conversation():
 
     # Kill All Threads
     audio_thread.join()
-    chatbot_thread.join()
-    
+
     # Generate Report
     turview_bot.analyze_answers()
 
@@ -320,4 +322,4 @@ def cv_file():
     return send_file(cv_filepath)
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True)
+    socketio.run(app)
