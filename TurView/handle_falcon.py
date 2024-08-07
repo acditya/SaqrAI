@@ -147,15 +147,11 @@ class FalconChatbot:
 
         text = response.choices[0].message.content
 
-        # tokens = 0
-        # for value in response.usage:
-        #     # if isinstance(value, int):
-        #     tokens += value
 
         print(f"Tokens Used: {response.usage}\n")
         print(text + "\nEND OF RESPONSE\n")
 
-        # self.question_messages.append({"role": "assistant", "content": text})
+        self.question_messages.append({"role": "assistant", "content": text})
 
         return text
 
@@ -169,11 +165,6 @@ class FalconChatbot:
         )
 
         text = response.choices[0].message.content
-
-        # tokens = 0
-        # for value in response.usage:
-        #     # if isinstance(value, int):
-        #     tokens += value
 
         print(f"Tokens Used: {response.usage}\n")
         print(text + "\nEND OF RESPONSE\n")
@@ -194,9 +185,6 @@ class FalconChatbot:
         text = response.choices[0].message.content
 
         tokens = 0
-        # for value in response.usage:
-        #     # if isinstance(value, int):
-        #     tokens += value
 
         print(f"Tokens Used: {response.usage}\n")
         print(text + "\nEND OF RESPONSE\n")
@@ -206,22 +194,7 @@ class FalconChatbot:
         return text
     
 
-    # Causes Errors
-    def get_greetings(self):
-        prompt = "Give me a string greeting message where you introduce yourself as the Ter View Bot and say you will interview them about the position in the job description."
-
-        return self.get_response(prompt)
-
-
     def get_questions(self):
-        # prompt = f"""
-        #     The CV: {self.cv}
-        #     Job Description: {self.job_desc}
-            
-        #     Now return 5 interview questions based on the job description and CV. 3 questions should be behavioral, and 2 questions should be technical.
-        #     Return them in a list of strings, you must follow this format: ["question1", "question2", "question3", "question4", "question5"] such that I can parse them in Python.
-        #     """
-
         prompt = f"""
             CV: {self.cv}
             Job Description: {self.job_desc}
@@ -242,14 +215,6 @@ class FalconChatbot:
 
 
     def get_llm_answer(self, question):
-        # prompt = f"""
-        #     This is a question: {question}
-
-        #     You must generate the ideal response to it.
-            
-        #     Return it as a string such that I can parse it in Python
-        #     """
-        
         prompt = f"""
             Question: {question}
             Generate the ideal answer to this interview question in no more than 3 sentences in string format so I can parse it in Python.
@@ -270,17 +235,6 @@ class FalconChatbot:
 
     def analyze_answers(self):
         for question, ideal_answer, answer in zip(self.questions, self.answers_from_llm, self.answers_from_user):
-            # prompt = f"""
-            # This is the question: {question}.
-            # This its ideal answer: {ideal_answer}.
-            # This is the answer provided by the candidate: {answer}. 
-
-            # Compare the candidate's answer to the question and ideal answer in terms of relevance and quality. 
-            # Then, you will return two things as a tuple: 1. A score from 1 to 10 as in integer. 2. A comment on the candidate's answer, Include the PROS and CONS of their answer as a string.
-
-            # Return them as a tuple (score, "comment") such that I can parse it in Python.
-            # """
-
             prompt = f"""
                 Question: {question}
                 Ideal Answer: {ideal_answer}

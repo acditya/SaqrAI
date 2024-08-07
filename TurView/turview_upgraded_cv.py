@@ -14,7 +14,7 @@ client = AI71(AI71_API_KEY)
 
 global messages
 messages = [
-        {"role": "system", "content": "You are a CV formatting assistant that will intake a CV, upgrade its English grammar and spelling, and return parts of it back as Python 3 datatypes."}
+    {"role": "system", "content": "You are a CV formatting assistant. Improve the English grammar and spelling of a given CV and return the sections as Python 3 data types."}
 ]
 
 def talk_to_model(input_text: str) -> str:
@@ -25,13 +25,26 @@ def talk_to_model(input_text: str) -> str:
     response = client.chat.completions.create(
         model="tiiuae/falcon-40b-instruct",
         messages=messages,
-    ).choices[0].message.content
-
-    messages.append({"role": "assistant", "content": response})
-
-    return response
+    )
 
 
+
+    text = response.choices[0].message.content
+
+    if "User:" in text:
+        "Found 'User:' in Text"
+        text = text.replace("User:", "").strip()
+    else:
+        text = text.strip()
+
+    print(f"Tokens Used: {response.usage}\n")
+    print(text + "\nEND OF RESPONSE\n")
+
+    messages.append({"role": "assistant", "content": text})
+
+    return text
+
+# Define the Classes for the Resume
 class Header:
     def __init__(self, email: str,  location: str, name: str, phone: str, github: Optional[str] = None, linkedin: Optional[str] = None):
         self.email = email
@@ -102,7 +115,7 @@ class Skills:
         self.skillset = skillset
 
     def __str__(self):
-        return f"Skillset: {self.skillset}, Training: {self.training}"
+        return f"Skillset: {self.skillset}"
 
 # Combines Everything Together To Create A Resume
 class Resume:
@@ -131,8 +144,8 @@ class Resume:
         context = {
             "header": self.header,
             "education": self.education,
-            "work": self.work
-            # "skills": self.skills
+            "work": self.work,
+            "skills": self.skills
         }
 
         # Render and Save the Document
@@ -144,42 +157,38 @@ def cv_formatter(cv_txt: str) -> Resume:
     # 1. Initialize CV Writer
     talk_to_model(f"This is the CV to Upgrade: {cv_txt}")
     
-    # 3. Format it Section by Section
+    # 2. Format it Section by Section
     queries = {
-        "header": "Return a list of 6 strings that include this person's Name, Email, Phone, Location, LinkedIn, and Github as a list of strings ['Name', 'Email', 'Phone', 'Location', 'LinkedIn', 'Github']. You will typically find this at the top of the unformatted CV. If any of these fields are empty, return an empty string for that field. Be smart, the CV may not be labelled very well so find the section that matches this. If this entire section is empty, just return one big empty list: []. Make sure to close all parentheses properly. Do not return anything except the list. no extra words at all",
-        "education": "From the CV, extract only one education experience as a list I will now describe such that I can parse it in Python ['University Name 1', 'Location', 'Dates of Enrollment', 'Major', 'GPA', 'Coursework', 'Brief sentence explaining some details']. Stick to this data type, do not return anything else. Be efficient in filling out these fields.",
-        "work": "From the CV, extract only one work experience as a list I will now describe such that I can parse it in Python ['Company', 'Position 1', 'Location', 'Dates of Work', 'very short sentence explaining this work experience'] Stick to this data type, do not return anything else. Be efficient in filling out these fields."
-        # "skills": "From the CV, extract one word/phrase skills as a list of string I will now describe such that I can parse it in Python. ['skill1', 'skill2', ...]. Stick to this data type, do not return anything else. Be efficient in filling out these fields."
+        "header": "Extract the Name, Email, Phone, Location, and LinkedIn from the CV as ['Name', 'Email', 'Phone', 'Location', 'LinkedIn']. If a field is empty, return an empty string for that field. If the entire section is empty, return []. Return only the list.",
+        "education": "Extract ONLY one education experience from the CV as ['University Name', 'Location', 'Dates of Enrollment', 'Major', 'GPA', 'Coursework', 'Brief details']. Return only the list.",
+        "work": "Extract ONLY one work experience from the CV as ['Company', 'Position', 'Location', 'Dates of Work', 'Two brief sentences about the work experience']. Return only the list.",
+        "skills": "Be creative and come up with or extract skills from the CV as ['skill1', 'skill2', ...]. Return only the list."
     }
 
     for key in queries:
         # Query the API for the Formatted Section
         print(f"Current key is {key}")
         response = talk_to_model(queries[key])
-        if "User:" in response:
-            formatted_query_data = response.replace("User:", "").strip()
-        else:
-            formatted_query_data = response.strip()
         
-        # Ensure the extracted part is valid Python syntax
+        # Ensure the extracted part is of valid Pythonic syntax
         try:
-            queries[key] = ast.literal_eval(formatted_query_data)  # Convert Literal String to Pythonic Datatype
+            queries[key] = ast.literal_eval(response)  # Convert Literal String to Pythonic Datatype
         except SyntaxError as e:
             print(f"SyntaxError: {e}")
-            print(f"Response was: {formatted_query_data}")
+            print(f"Response was: {response}")
             queries[key] = None  # Handle the error or set a default value
 
-        print(f"{key}: {formatted_query_data}")
+        print(f"{key}: {response}")
 
-    # 4. Create Each Individual Section as an Object
+    # 3. Create Each Individual Section as an Object
     print("Formulating Header Section") 
     if queries["header"]:
         header = Header(name = queries["header"][0].upper(),
                         email = queries["header"][1],
                         phone = queries["header"][2],
                         location = queries["header"][3],
-                        linkedin = queries["header"][4],
-                        github = queries["header"][5])
+                        linkedin = queries["header"][4]
+                        )
     else:
         header = None
         
@@ -210,15 +219,15 @@ def cv_formatter(cv_txt: str) -> Resume:
     else:
         work = None    
         
-    # print("Formulating Skills Section")
-    # if queries["skills"]:
-    #     skills = Skills(skillset = queries["skills"])
-    # else:
-    #     skills = None
+    print("Formulating Skills Section")
+    if queries["skills"]:
+        skills = Skills(skillset = queries["skills"])
+    else:
+        skills = None
 
     print("Returning Resume Object to Function Caller")
-    # Arrange all Objects into a Single Formatted Resume Object and reutrn to Caller
-    return Resume(header = header, work = work, education = education)
+    # 4. Arrange all Objects into a Single Formatted Resume Object and reutrn to Caller
+    return Resume(header = header, work = work, education = education, skills = skills)
 
 # Extracts Text from Unformatted .DOCX, .PDF, and .RTF Files.
 def extract_text(file_path) -> str:
@@ -248,9 +257,5 @@ def extract_text(file_path) -> str:
     raise FileNotFoundError(f"Couldn't Find the File. {file_path}")
 
 if __name__ == "__main__":
-    resume = cv_formatter(extract_text(r"TurView\Docxtpl Templates\Formatted CVs\Formatted_h-1995-alameri-gmail-com.pdf"))
+    resume = cv_formatter(extract_text(r"TurView\Docxtpl Templates\Formatted CVs\Ahmed Almaeeni CV - Civil & Transportation Engineer --.pdf"))
     resume.write_document()
-
-# print(talk_to_model(f"This is my CV: {extract_text(r'TurView/Docxtpl Templates/Formatted CVs/Ahmed Almaeeni CV - Civil & Transportation Engineer --.pdf')}")) 
-
-# print(talk_to_model("From the CV, extract a list I will now describe such that I can parse it in Python (one sublist in the MASTER list of lists for each education) [['University Name 1', 'Location', 'Dates of Enrollment', 'Major', 'GPA', 'Coursework', 'Details']]. Stick to this data type, do not return anything else. Be efficient in filling out these fields."))
