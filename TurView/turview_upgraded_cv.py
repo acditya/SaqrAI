@@ -27,8 +27,6 @@ def talk_to_model(input_text: str) -> str:
         messages=messages,
     )
 
-
-
     text = response.choices[0].message.content
 
     if "User:" in text:

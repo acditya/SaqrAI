@@ -12,6 +12,7 @@ import turview_upgraded_cv as cv
 import time
 import random
 import job_descriptions as jd
+import PyPDF2
 
 
 app = Flask(__name__)
@@ -30,13 +31,15 @@ images = {
     5: '/static/TurView_Bot_Speaking2.png'
 }
 
-global audio_thread, audio_queue, chatbot_thread, turview_bot, user_id, transcribe, user_dir_path
+global audio_thread, audio_queue, chatbot_thread, turview_bot, user_id, transcribe, user_dir_path, cv_filepath
 
 audio_queue = queue.Queue()
 turview_bot = None
 audio_thread = None
 chatbot_thread = None
 transcribe = True
+cv_filepath = ""
+
 
 @app.route("/")
 def index():
@@ -111,8 +114,10 @@ def register():
     
     return redirect("/turview")
 
+
 @app.route("/cv_enhancer", methods=["GET", "POST"])
 def cv_enhancer():
+    global cv_filepath
     if request.method == "POST":
         # Get the cv
         if 'file' not in request.files:
@@ -128,10 +133,18 @@ def cv_enhancer():
         filepath = os.path.join(UPLOAD_FOLDER, file.filename)
         file.save(filepath)
 
-        ### CV fomatting logic ###
+        ### CV formatting logic ###
+        formatted_resume = cv.cv_formatter(cv.extract_text(filepath))
+        output_filepath = f"{UPLOAD_FOLDER}/formatted_{file.filename}"
+        formatted_resume.write_document(output_path=output_filepath)
+        cv_filepath = output_filepath
+
+        # Redirect to the route that serves the PDF file
+        return redirect("/cv")
     
     elif request.method == "GET":
         return render_template("cv.html")
+
 
 @app.route("/turview")
 def turview():
@@ -297,6 +310,11 @@ def report():
     conn.close()
 
     return send_file(report)
+
+@app.route("/cv")
+def cv_file():
+    global cv_filepath
+    return send_file(cv_filepath)
 
 if __name__ == "__main__":
     socketio.run(app, debug=True)
