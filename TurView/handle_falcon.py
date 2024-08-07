@@ -34,9 +34,6 @@ class FalconChatbot:
         self.results = []
         self.greetings = "Hello! I am Ter View Bot and I will be interviewing you today based on your uploaded resume and chosen job description, good luck!"
 
-        if TurView:
-            self.answers_from_llm = [self.get_llm_answer(question) for question in self.questions]
-
         # Fillers in Between Each Question --> 100 Fillers
         self.fillers = [ 
             "That's interesting. Let's move on to the next question.",
@@ -140,19 +137,27 @@ class FalconChatbot:
             "Understood. Moving on."
         ]
 
-
     def get_question_response(self, prompt):
         self.question_messages.append({"role": "user", "content": prompt}) 
 
         response = self.client.chat.completions.create(
             model="tiiuae/falcon-180b-chat",
             messages=self.question_messages,
-        ).choices[0].message.content
+        )
 
-        # print(response)
-        self.question_messages.append({"role": "assistant", "content": response})
+        text = response.choices[0].message.content
 
-        return response
+        # tokens = 0
+        # for value in response.usage:
+        #     # if isinstance(value, int):
+        #     tokens += value
+
+        print(f"Tokens Used: {response.usage}\n")
+        print(text + "\nEND OF RESPONSE\n")
+
+        # self.question_messages.append({"role": "assistant", "content": text})
+
+        return text
 
 
     def get_answer_response(self, prompt):
@@ -161,12 +166,21 @@ class FalconChatbot:
         response = self.client.chat.completions.create(
             model="tiiuae/falcon-180b-chat",
             messages=self.answer_messages,
-        ).choices[0].message.content
+        )
 
-        # print(response)
-        self.answer_messages.append({"role": "assistant", "content": response})
+        text = response.choices[0].message.content
 
-        return response
+        # tokens = 0
+        # for value in response.usage:
+        #     # if isinstance(value, int):
+        #     tokens += value
+
+        print(f"Tokens Used: {response.usage}\n")
+        print(text + "\nEND OF RESPONSE\n")
+
+        self.answer_messages.append({"role": "assistant", "content": text})
+
+        return text
 
 
     def get_report_response(self, prompt):
@@ -175,12 +189,21 @@ class FalconChatbot:
         response = self.client.chat.completions.create(
             model="tiiuae/falcon-180b-chat",
             messages=self.report_messages,
-        ).choices[0].message.content
+        )
 
-        # print(response)
-        # self.report_messages.append({"role": "assistant", "content": response})
+        text = response.choices[0].message.content
 
-        return response
+        tokens = 0
+        # for value in response.usage:
+        #     # if isinstance(value, int):
+        #     tokens += value
+
+        print(f"Tokens Used: {response.usage}\n")
+        print(text + "\nEND OF RESPONSE\n")
+
+        self.report_messages.append({"role": "assistant", "content": text})
+
+        return text
     
 
     # Causes Errors
@@ -206,7 +229,16 @@ class FalconChatbot:
             Generate 5 interview questions: 3 behavioral and 2 technical, based on this CV and Job description in this format so i can parse it in Python: ["question1", "question2", "question3", "question4", "question5"].
             """
         
-        return ast.literal_eval(self.get_question_response(prompt))
+        response = self.get_question_response(prompt)
+
+        if "User:" in response:
+            print("Found User: in Response")
+            response = response.replace("User:", "").strip()
+
+        else:
+            response = response.strip()
+
+        return ast.literal_eval(response)
 
 
     def get_llm_answer(self, question):
@@ -220,11 +252,21 @@ class FalconChatbot:
         
         prompt = f"""
             Question: {question}
-            Generate the ideal answer to this question in this format so i can parse it in Python: "ideal answer".
+            Generate the ideal answer to this interview question in no more than 3 sentences in string format so I can parse it in Python.
             """
         
-        return self.get_answer_response(prompt)
+        response = self.get_answer_response(prompt)
+
+        if "User:" in response:
+            print("Found User: in Response")
+            response = response.replace("User:", "").strip()
+        else:
+            response = response.strip()
+
+        return ast.literal_eval(response)
     
+    def set_ideal_answers(self):
+        self.answers_from_llm = [self.get_llm_answer(question) for question in self.questions]
 
     def analyze_answers(self):
         for question, ideal_answer, answer in zip(self.questions, self.answers_from_llm, self.answers_from_user):
@@ -247,7 +289,16 @@ class FalconChatbot:
                 Return a Score (1-10) and comment (pros and cons) for the candidate answer based on question and ideal answer.
                 Format for Python: (score, "comment").
                 """
-            self.results.append(self.get_report_response(prompt))
+            response = self.get_report_response(prompt)
+
+            if "User:" in response:
+                print("Found User: in Response")
+                response = response.replace("User:", "").strip()
+
+            else:
+                response = response.strip()
+
+            self.results.append(ast.literal_eval(response))
 
 
     def insert_user_answer(self, answer_as_text):
@@ -256,10 +307,6 @@ class FalconChatbot:
 
     def get_filler(self):
         return random.choice(self.fillers)
-
-
-    def get_messages(self):
-        return self.messages
 
 
     def get_report(self):
@@ -351,11 +398,12 @@ if __name__ == "__main__":
 
                     Competitive salary and benefits package.
                     Opportunities for career advancement and professional development.
-                    Collaborative and dynamic work environment.""")
+                    Collaborative and dynamic work environment.""",
 
-    chatbot.questions = chatbot.get_questions()
+                    name="Sultan Waleed Alhosani",)
 
     print(chatbot.questions)
+
 
     for question in chatbot.questions:
         answer = chatbot.get_llm_answer(question=question)
@@ -363,6 +411,10 @@ if __name__ == "__main__":
         chatbot.answers_from_llm.append(answer)
     
     chatbot.answers_from_user = chatbot.answers_from_llm
-
+    chatbot.set_ideal_answers()
     chatbot.analyze_answers()
+
+
+    tr = chatbot.get_report()
+    tr.write_document("test.docx")
     print(chatbot.results)

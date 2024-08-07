@@ -193,6 +193,9 @@ def handle_conversation():
     st.say("Thank you for your time and we hope you enjoyed your experience with Ter View!")
     update_info(image_num=2, text="<h4>Your Report is Being Generated!</h4>")
 
+    # Generate Ideal Answers
+    turview_bot.set_ideal_answers()
+
     # Generate Report
     turview_bot.analyze_answers()
 

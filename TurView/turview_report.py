@@ -5,9 +5,9 @@ class TurViewReport:
     def __init__(self, name: str, job_desc: str, questions: list[str], ideal_answers: list[str], client_answers: list[str], results: list[(int, str)]):
         self.name = name if name else None
         self.job_desc = job_desc if job_desc else None
-        self.questions = Questions(questions)
-        self.ideal_answers = Answers(ideal_answers)
-        self.client_answers = Answers(client_answers)
+        self.questions = questions if questions else None
+        self.ideal_answers = ideal_answers if ideal_answers else None
+        self.client_answers = client_answers if client_answers else None
         self.results = results if results else None
 
     def __str___(self):
@@ -24,21 +24,21 @@ class TurViewReport:
         Results: {self.results}
         """
     
-    def write_document(self, output_path: str, template_path: str=r"Docxtpl Templates/TurView Interview Report.docx") -> None:
+    def write_document(self, output_path: str, template_path: str=r"TurView/Docxtpl Templates/TurView Docxtpl Compatible Interview Report Template.docx") -> None:
         # Load the template
         doc = DocxTemplate(template_path)
 
         # Create context from the provided data
         context = {
             "name": str(self.name) if self.name else [],
-            "job_desc": self.job_desc if self.job_desc else [],
+            "job_desc": self.job_desc if self.job_desc else "debugging",
             "questions": self.questions if self.questions else [],
             "ideal_answers": self.ideal_answers if self.ideal_answers else [],
             "client_answers": self.client_answers if self.client_answers else [], 
             "results": self.results if self.results else [],
-            "maximum_score": max([result[0] for result in self.results]),
-            "minimum_score": min([result[0] for result in self.results]),
-            "average_score": sum([result[0] for result in self.results]) / len(self.results)
+            "maximum_score": max([int(result[0]) for result in self.results]),
+            "minimum_score": min([int(result[0]) for result in self.results]),
+            "average_score": sum([int(result[0]) for result in self.results]) / len(self.results)
         }
 
         # Render and Save the Document
