@@ -46,13 +46,6 @@ python app.py
     <li><strong>Secret Key:</strong> Set a secure secret key for session management.</li>
 </ul>
 
-<h2>Usage</h2>
-<ol>
-    <li><strong>Register:</strong> Navigate to the <code>/register</code> route to register a new user and upload their CV and job description.</li>
-    <li><strong>Start Interview:</strong> Once registered, go to the <code>/turview</code> route to start the interview process.</li>
-    <li><strong>Submit Audio:</strong> Upload audio responses during the interview. The system will transcribe and analyze the responses.</li>
-</ol>
-
 <h2>Contributing</h2>
 <ol>
     <li>Fork the repository.</li>
