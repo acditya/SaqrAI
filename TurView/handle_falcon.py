@@ -3,9 +3,7 @@ import ast
 import random
 import turview_report as tr
 
-AI71_BASE_URL = "https://api.ai71.ai/v1/"
-# AI71_API_KEY = "api71-api-cbdf95af-ec38-4f97-8d7e-cb2ec3823f46" # Adi 1
-AI71_API_KEY = "api71-api-52cc69d3-4619-425f-b618-cc53d3e59f37" # Adi 2
+AI71_API_KEY = "api71-api-52cc69d3-4619-425f-b618-cc53d3e59f37"
 
 class FalconChatbot:
     def __init__(self, cv_text, job_desc_text, name=None, TurView: bool = True):
@@ -147,7 +145,6 @@ class FalconChatbot:
 
         text = response.choices[0].message.content
 
-
         print(f"Tokens Used: {response.usage}\n")
         print(text + "\nEND OF RESPONSE\n")
 
@@ -183,8 +180,6 @@ class FalconChatbot:
         )
 
         text = response.choices[0].message.content
-
-        tokens = 0
 
         print(f"Tokens Used: {response.usage}\n")
         print(text + "\nEND OF RESPONSE\n")
@@ -230,8 +225,10 @@ class FalconChatbot:
 
         return ast.literal_eval(response)
     
+
     def set_ideal_answers(self):
         self.answers_from_llm = [self.get_llm_answer(question) for question in self.questions]
+
 
     def analyze_answers(self):
         for question, ideal_answer, answer in zip(self.questions, self.answers_from_llm, self.answers_from_user):
@@ -240,7 +237,7 @@ class FalconChatbot:
                 Ideal Answer: {ideal_answer}
                 Candidate Answer: {answer}
 
-                Return a Score (1-10) and comment (pros and cons) for the candidate answer based on question and ideal answer.
+                To grade the candidate answer, return a Score (1-10) and comment (pros and cons) for the candidate answer based on the question and ideal answer.
                 Format for Python: (score, "comment").
                 """
             response = self.get_report_response(prompt)

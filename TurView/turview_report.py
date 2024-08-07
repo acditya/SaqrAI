@@ -30,11 +30,11 @@ class TurViewReport:
 
         # Create context from the provided data
         context = {
-            "name": str(self.name) if self.name else [],
+            "name": str(self.name) if self.name else "No Name Provided",
             "job_desc": self.job_desc if self.job_desc else "No Job Description Provided",
-            "questions": self.questions if self.questions else [],
-            "ideal_answers": self.ideal_answers if self.ideal_answers else [],
-            "client_answers": self.client_answers if self.client_answers else [], 
+            "questions": self.questions if self.questions else ["No Questions Provided"],
+            "ideal_answers": self.ideal_answers if self.ideal_answers else ["No Ideal Answers Provided"],
+            "client_answers": self.client_answers if self.client_answers else ["No Answers Provided"], 
             "results": self.results if self.results else [],
             "maximum_score": max([int(result[0]) for result in self.results]),
             "minimum_score": min([int(result[0]) for result in self.results]),

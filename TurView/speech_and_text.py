@@ -14,7 +14,6 @@ def say(message):
     engine.runAndWait()
     engine.stop()
 
-# we have to make it so that an audio file is passed to the transcribe function somehow
 def transcribe(audio_file):
     model_size = "small.en" # tiny.en, tiny, base.en, base, small.en, small, medium.en, medium, large-v1, large-v2, large-v3, large, distil-large-v2, distil-medium.en, distil-small.en, distil-large-v3
 
@@ -22,12 +21,11 @@ def transcribe(audio_file):
 
     segments, info = model.transcribe(audio_file, beam_size=5)
 
-    print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
-
+    text = []
     for segment in segments:
         print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
+        text.append(segment.text)
 
-    transcribed_text = " ".join([segment.text for segment in segments])
-
-    return transcribed_text
+    text = "".join(text)
+    return text
 

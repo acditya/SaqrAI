@@ -171,23 +171,25 @@ def initialize_turview_bot(name, cv, job_description):
 
 
 def handle_transcription():
+    global audio_queue
+
     print("Transcription Started")
     audio_count = 0
 
     while audio_count < 5:
-        while not audio_queue.empty():
-            file = audio_queue.get()
-            print(f"Transcribing {file}")
-            text = st.transcribe(file)
-            print(f"Transcription: {text}")
-            turview_bot.answers_from_user.append(text)
-            audio_count += 1
+        file = audio_queue.get()
+        print(f"Transcribing {file}")
+        text = st.transcribe(file)
+        print(f"Transcription: {text}")
+        turview_bot.answers_from_user.append(text)
+        audio_count += 1
 
 
 @app.route("/handle_conversation")
 def handle_conversation():
     global turview_bot
     global user_id
+    global audio_queue
 
     conn = sqlite3.connect("turview.db")
     db = conn.cursor()
@@ -220,7 +222,7 @@ def handle_conversation():
         print(f"Answer Received for Question #{question + 1}, Proceeding...")
         
         time.sleep(random.uniform(1.5, 3.5)) # Natural Pause
-        audio_queue.put(f"{user_dir_path}/question_{question + 1}.wav")
+        audio_queue.put(f"{user_dir_path}\\question_{question + 1}.wav")
 
         if question != 4:
             filler = turview_bot.get_filler()
@@ -245,10 +247,10 @@ def handle_conversation():
 
     report = tr.TurViewReport(name=turview_bot.name, job_desc=turview_bot.job_desc, questions=turview_bot.questions, client_answers=turview_bot.answers_from_user, ideal_answers=turview_bot.answers_from_llm, results = turview_bot.results)
 
-    report_path = f"{user_dir_path}/turview_report{user_id}.docx"
+    report_path = f"{user_dir_path}\\turview_report{user_id}.docx"
     report.write_document(output_path=report_path)
 
-    db.execute("INSERT INTO users (interview report) VALUES (?)", (report_path,))
+    db.execute("UPDATE users SET interview_report = ? WHERE id = ?", (report_path, user_id))
     conn.commit()
 
     update_info(image_num=4, text="<h4>Thank You for using TurView, your AI-based key to success in interview preperation and career development!</h4>")
@@ -257,7 +259,7 @@ def handle_conversation():
     
 
     conn.close()
-
+    print("downloading report")
     return redirect("/report") 
 
 
@@ -283,7 +285,6 @@ def update_info(image_num: int, text: str):
 
 @app.route('/upload-audio', methods=['POST'])
 def upload_audio():
-    global audio_queue
     global user_dir_path
 
     if 'audio' not in request.files:
@@ -299,7 +300,6 @@ def upload_audio():
     file_path = os.path.join(user_dir_path, f"question_{audio_id}.wav")
     audio.save(file_path)
 
-    audio_queue.put(file_path)
 
     return 'success' 
 
@@ -311,6 +311,7 @@ def report():
 
     db.execute("SELECT interview_report FROM users WHERE id = ?", (user_id,))
     report = db.fetchone()[0]
+    print(report)
 
     conn.close()
 
