@@ -3,21 +3,6 @@ html
 background-color: #FFFFFF;/*#Fdfce8*/
 }
 
-.table_header
-{
-    font-weight: bold;
-    padding-left: 300px;
-    padding-top: 50px;
-    font-size: 18px;
-}
-
-.table_cell
-{
-    padding-left: 300px;
-    border-top: 0.5px solid lightgrey;
-    font-size: 15px;
-}
-
 .text-without-padding
 {
     padding-left: 0;
@@ -122,4 +107,10 @@ background-color: #FFFFFF;/*#Fdfce8*/
   {
     width: 25%;
     height: auto;
+  }
+
+  .link
+  {
+    text-decoration: none;
+    margin: 8px;
   }
