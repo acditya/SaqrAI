@@ -12,11 +12,10 @@ import turview_upgraded_cv as cv
 import time
 import random
 import job_descriptions as jd
-import PyPDF2
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'enforngtdlbnedjkjtrsxcvbnjktyhyetn'
+app.config['SECRET_KEY'] = 'enforngtdlbnedjkjtrsxcvvhgbjnkmlnlbvkgcxtyudrtfyiugobnjktyhyetn'
 socketio = SocketIO(app)
 
 # App configuration to accept file uploads
