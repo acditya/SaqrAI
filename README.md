@@ -59,7 +59,7 @@
 
         <h2>Features</h2>
         <ul>
-            <li><strong>Automated Interviews:</strong> Conduct interviews using Falcon's powerful language models.</li>
+            <li><strong>Automated Interviews:</strong> Conduct interviews using TII's Falcon's powerful language models.</li>
             <li><strong>Audio Transcription:</strong> Convert audio responses to text for easy analysis.</li>
             <li><strong>User Registration:</strong> Securely register users and manage interview data.</li>
             <li><strong>Conversation Handling:</strong> Interactive and dynamic question generation and answer analysis.</li>

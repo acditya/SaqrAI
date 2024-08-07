@@ -132,11 +132,9 @@ class Resume:
         
         return f"Header: {self.header.__str__()}, Education: {education_str}, Work: {work_str}, Projects: {projects_str}, Leadership: {leadership_str}, Skills: {skills_str}"
     
-    def write_document(self, template_path: str = r"TurView/Docxtpl Templates/TurView Docxtpl Compatible CV Template.docx", output_path: str = r"TurView/Docxtpl Templates") -> None:
+    def write_document(self, template_path: str = r"Docxtpl Templates/TurView Docxtpl Compatible CV Template.docx", output_path: str = r"Docxtpl Templates") -> None:
         # Load the template
         doc = DocxTemplate(template_path)
-
-        output_path = os.path.join(output_path, f"{self.header.name} CV.docx")
 
         # Create context from the provided data
         context = {
