@@ -63,3 +63,6 @@ python app.py
 
 <h2>Educational Career Prep Tool</h2>
 <p>TurView is not just an interview chatbot; it is an educational career preparation tool designed to help users enhance their interview skills and streamline their job application process. By interfacing with Falcon-180B-Chat and Falcon-40B-Instruct LLMs, TurView provides intelligent and dynamic interview experiences. Additionally, our AI-based CV formatter ensures that your resume meets ATS standards, helping you stand out to potential employers and accelerate your career development.</p>
+
+
+<p>P.S: Files from Demo Video are available in the Folder "Demo"</p>
