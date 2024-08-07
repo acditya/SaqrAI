@@ -17,7 +17,7 @@
 
 <h3>Prerequisites</h3>
 <ul>
-    <li>Python 3.7+</li>
+    <li>Python 3.8+</li>
     <li>AI71</li>
     <li>Flask</li>
     <li>SQLite3</li>
