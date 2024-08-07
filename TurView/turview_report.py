@@ -31,7 +31,7 @@ class TurViewReport:
         # Create context from the provided data
         context = {
             "name": str(self.name) if self.name else [],
-            "job_desc": self.job_desc if self.job_desc else "debugging",
+            "job_desc": self.job_desc if self.job_desc else "No Job Description Provided",
             "questions": self.questions if self.questions else [],
             "ideal_answers": self.ideal_answers if self.ideal_answers else [],
             "client_answers": self.client_answers if self.client_answers else [], 
@@ -61,6 +61,3 @@ class Answers:
         self.a3 = answers[2] if answers[2] else None
         self.a4 = answers[3] if answers[3] else None
         self.a5 = answers[4] if answers[4] else None
-
-# temp_report = TurViewReport(name="Aditya", job_desc="Software Engineer", questions=["What is your name?", "What is your age?", "What is your name?", "What is your age?", "What is your name?"], ideal_answers=["Aditya", "22", "Aditya", "22", "Aditya"], client_answers=["Aditya", "22", "Aditya", "22", "Aditya"], results=[(5, "Correct"), (6, "Correct"), (5.5, "Correct"), (9, "Correct"), (10, "Correct")])
-# temp_report.write_document(r"TurView\Docxtpl Templates\TurView Interview Report.docx", r"TurView\Docxtpl Templates\Aditya_report.docx")

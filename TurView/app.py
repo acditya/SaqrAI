@@ -1,4 +1,4 @@
-from flask import Flask, redirect, render_template, request, send_file
+from flask import Flask, redirect, render_template, request, send_file, url_for
 from flask_socketio import SocketIO
 import sqlite3
 import os
@@ -92,8 +92,8 @@ def register():
         else:
             return 'Please enter your job description' 
         
-        if len(job_desc) > 400:
-            return ''
+        if len(job_desc) > 2000:
+            return 'job description should be less than 2000 charctaters'
 
         # Save info to the database 
         db.execute("INSERT INTO users (datetime, name, cv, job_description) VALUES (?, ?, ?, ?)", (datetime.today().strftime('%Y-%m-%d %H:%M:%S'), name, filepath, job_desc))
@@ -107,11 +107,13 @@ def register():
         os.mkdir(user_dir_path)
 
         conn.close()
+        print("rediecting to /turview")
+        return redirect(url_for("turview"))
 
     elif request.method == "GET":
-        return render_template("register.html", designer_job_desc=jd.designer_job_desc(), software_job_desc=jd.software_job_desc(), consultant_job_desc=jd.consultant_job_desc(), stratigist_job_desc=jd.stratigist_job_desc())
+        return render_template("register.html")
     
-    return redirect("/turview")
+    
 
 
 @app.route("/cv_enhancer", methods=["GET", "POST"])
@@ -170,14 +172,16 @@ def initialize_turview_bot(name, cv, job_description):
 
 def handle_transcription():
     print("Transcription Started")
-    
-    while transcribe:
-        while not audio_queue.empty:
+    audio_count = 0
+
+    while audio_count < 5:
+        while not audio_queue.empty():
             file = audio_queue.get()
             print(f"Transcribing {file}")
             text = st.transcribe(file)
             print(f"Transcription: {text}")
-            turview_bot.answers_from_user.append = text
+            turview_bot.answers_from_user.append(text)
+            audio_count += 1
 
 
 @app.route("/handle_conversation")
@@ -216,6 +220,7 @@ def handle_conversation():
         print(f"Answer Received for Question #{question + 1}, Proceeding...")
         
         time.sleep(random.uniform(1.5, 3.5)) # Natural Pause
+        audio_queue.put(f"{user_dir_path}/question_{question + 1}.wav")
 
         if question != 4:
             filler = turview_bot.get_filler()
@@ -232,6 +237,9 @@ def handle_conversation():
     # Generate Ideal Answers
     turview_bot.set_ideal_answers()
 
+    # Kill All Threads
+    audio_thread.join()
+
     # Generate Report
     turview_bot.analyze_answers()
 
@@ -247,9 +255,7 @@ def handle_conversation():
     st.say("You may now view your Ter View Report!")
     update_info(image_num=2, text="<h4>You may now view your TurView Report!</h4>")
     
-    # Kill All Threads
-    audio_thread.join()
-    chatbot_thread.join()
+
     conn.close()
 
     return redirect("/report") 
@@ -316,4 +322,4 @@ def cv_file():
     return send_file(cv_filepath)
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True)
+    socketio.run(app)
