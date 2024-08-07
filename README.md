@@ -6,11 +6,13 @@
 <h2>Features</h2>
 <ul>
     <li><strong>Automated Interviews:</strong> Conduct interviews using TII's Falcon-180B-Chat and Falcon-40B-Instruct LLMs from AI71's API.</li>
+    <li><strong>Speak with AI:</strong> Text-to-Speech Software to Directly Communicate with the AI, bypassing the usual keyboard-and-mouse approach.</li>
     <li><strong>Audio Transcription:</strong> Convert audio responses to text for easy analysis.</li>
     <li><strong>User Registration:</strong> Securely register users and manage interview data.</li>
     <li><strong>Conversation Handling:</strong> Interactive and dynamic question generation and answer analysis.</li>
     <li><strong>Database Integration:</strong> Store and manage user and interview data using SQLite.</li>
     <li><strong>AI-based CV Formatter:</strong> Upgrade any CV to ATS format in seconds to help accelerate career development.</li>
+    <li><strong>Dynamic Bespoke TurView Webpage:</strong> Navigate TurView's offerings through our self-developed web interface developed in entirety on Flask.</li>
 </ul>
 
 <h2>Getting Started</h2>
