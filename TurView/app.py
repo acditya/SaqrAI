@@ -89,6 +89,9 @@ def register():
             
         else:
             return 'Please enter your job description' 
+        
+        if len(job_desc) > 400:
+            return ''
 
         # Save info to the database 
         db.execute("INSERT INTO users (datetime, name, cv, job_description) VALUES (?, ?, ?, ?)", (datetime.today().strftime('%Y-%m-%d %H:%M:%S'), name, filepath, job_desc))
@@ -108,6 +111,27 @@ def register():
     
     return redirect("/turview")
 
+@app.route("/cv_enhancer", methods=["GET", "POST"])
+def cv_enhancer():
+    if request.method == "POST":
+        # Get the cv
+        if 'file' not in request.files:
+            return 'No file part', 400
+
+        file = request.files['file']
+
+        # If the user does not select a file, the browser submits an empty part
+        if file.filename == '':
+            return 'No selected file', 400
+
+        # Save the file to the specified upload folder
+        filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+        file.save(filepath)
+
+        ### CV fomatting logic ###
+    
+    elif request.method == "GET":
+        return render_template("cv.html")
 
 @app.route("/turview")
 def turview():
