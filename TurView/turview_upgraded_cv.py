@@ -136,6 +136,8 @@ class Resume:
         # Load the template
         doc = DocxTemplate(template_path)
 
+        self.header = Header(name="Ahmad Al Masri", phone="051 23456 789", email="ahmad@turview.ai", location="Abu Dhabi, UAE")
+
         # Create context from the provided data
         context = {
             "header": self.header,
