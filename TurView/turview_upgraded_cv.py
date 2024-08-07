@@ -229,6 +229,7 @@ def cv_formatter(cv_txt: str) -> Resume:
     # 4. Arrange all Objects into a Single Formatted Resume Object and reutrn to Caller
     return Resume(header = header, work = work, education = education, skills = skills)
 
+
 # Extracts Text from Unformatted .DOCX, .PDF, and .RTF Files.
 def extract_text(file_path) -> str:
     if os.path.exists(file_path):

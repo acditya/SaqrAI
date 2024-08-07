@@ -163,7 +163,7 @@ def handle_conversation():
 
     st.say(turview_bot.greetings)
     
-    time.sleep(random.uniform(2.5, 5)) # Natural Pause
+    time.sleep(random.uniform(1.5, 3.5)) # Natural Pause
 
     for question in range(len(turview_bot.questions)):
         dir_len = check_dir_len(user_dir_path)
@@ -179,7 +179,7 @@ def handle_conversation():
                 break
         print(f"Answer Received for Question #{question + 1}, Proceeding...")
         
-        time.sleep(random.uniform(2.5, 5)) # Natural Pause
+        time.sleep(random.uniform(1.5, 3.5)) # Natural Pause
 
         if question != 4:
             filler = turview_bot.get_filler()
@@ -187,7 +187,7 @@ def handle_conversation():
             st.say(filler)
             update_info(image_num=2, text=f"<h6>{filler}</h6>")
             
-            time.sleep(random.uniform(2.5, 5)) # Natural Pause
+            time.sleep(random.uniform(1.5, 3.5)) # Natural Pause
     
     update_info(image_num=4, text="<h4>Thank You for using TurView, your AI-based key to success in interview preperation and career development!</h4>")
     st.say("Thank you for your time and we hope you enjoyed your experience with Ter View!")
